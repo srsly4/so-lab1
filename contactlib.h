@@ -8,7 +8,10 @@
 #define CONTACT_UNIDB_DLL 1 //double linked-list storage type
 #define CONTACT_UNIDB_BT 2 //binary tree storage type
 
-typedef struct contact_uninode {
+#define CONTACT_UNIDB_STRING_SIZE 64
+#define CONTACT_UNIDB_SHORTSTRING_SIZE 24
+
+struct contact_uninode {
     struct contact_uninode* left; //and previous in DL-L
     struct contact_uninode* right; //and next in DL-L
     struct contact_uninode* parent; //only in BT
@@ -19,13 +22,14 @@ typedef struct contact_uninode {
     char* email;
     char* phone;
     char* address;
-} contact_uninode;
+};
 
 typedef struct contacts_unidb {
     struct contact_uninode* first; //one and only in case of BT
     struct contact_uninode* last; //used only for DL-L
     int type;
     uint32_t size;
+    uint32_t primary_key_serial;
     struct contact_uninode* current;
 } contacts_unidb;
 
@@ -39,6 +43,6 @@ int cunidb_remove(contacts_unidb* db, uint32_t type);
 
 //iterator
 bool cunidb_iterator_empty(contacts_unidb* db);
-contact_uninode* cunidb_iterator_next(contacts_unidb* db);
+struct contact_uninode* cunidb_iterator_next(contacts_unidb* db);
 
 
