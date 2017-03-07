@@ -28,18 +28,23 @@ struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surnam
 
     tmpsize = trimsize(strlen(name), CONTACT_UNIDB_STRING_SIZE);
     cname = calloc(tmpsize, sizeof(char));
+    memset(cname+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(surname), CONTACT_UNIDB_STRING_SIZE);
     csurname = calloc(tmpsize, sizeof(char));
+    memset(csurname+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(email), CONTACT_UNIDB_SHORTSTRING_SIZE);
     cemail = calloc(tmpsize, sizeof(char));
+    memset(cemail+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(phone), CONTACT_UNIDB_SHORTSTRING_SIZE);
     cphone = calloc(tmpsize, sizeof(char));
+    memset(cphone+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(address), CONTACT_UNIDB_STRING_SIZE);
     caddress = calloc(tmpsize, sizeof(char));
+    memset(caddress+tmpsize-1, '\0', 1);
 
     node->index = db->primary_key_serial;
     node->name = cname;
