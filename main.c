@@ -26,7 +26,7 @@ int parse_data(const char* filename){
         cunidb_add(db, fields[0], fields[1], fields[2], fields[3], fields[4], fields[5]);
 
     }
-
+    fclose(file);
     return 0;
 }
 
@@ -36,14 +36,7 @@ void print_item(struct contact_uninode* item){
 }
 
 int main(){
-    printf("Hello world, oh deer.\n");
-    int i = 0;
     db = cunidb_initialize(CONTACT_UNIDB_DLL);
-    printf("Initialized.\n");
-
-    printf("Adding test items...\n");
-    cunidb_add(db, "Jan", "Kowalski", "01-01-2001", "test@test.pl", "123456789", "Testowo 00-000, Testowa 00");
-    cunidb_add(db, "Anna", "Kowalska", "01-01-2001", "test@test.pl", "123456789", "Testowo 00-000, Testowa 00");
 
     printf("Adding CSV items...\n");
     parse_data("sample100.csv");
@@ -72,5 +65,18 @@ int main(){
 
     printf("Deleting from memory...\n");
     cunidb_free(db);
+
+
+
+    /* BinaryTree Test */
+//    db = cunidb_initialize(CONTACT_UNIDB_BT);
+//    printf("Initialized.\n");
+//    printf("Adding CSV items...\n");
+//    parse_data("sample100.csv");
+//
+//    printf("Freeing memory...");
+//    cunidb_free(db);
+//
+//    printf("Finished!");
     return 0;
 }

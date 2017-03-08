@@ -22,6 +22,8 @@ struct contact_uninode {
     struct contact_uninode* left; //and previous in DL-L
     struct contact_uninode* right; //and next in DL-L
     struct contact_uninode* parent; //only in BT
+    bool btdir; //direction for inserting in BT
+    bool btseen; //iterator flag in BT
     uint32_t index;
     char* name;
     char* surname;

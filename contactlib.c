@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 size_t trimsize(size_t original, size_t limit){
-    return original > limit ? limit : original;
+    return original+1 > limit ? limit : original+1;
 }
 
 contacts_unidb* cunidb_initialize(int type){
@@ -29,32 +29,32 @@ struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surnam
     tmpsize = trimsize(strlen(name), CONTACT_UNIDB_STRING_SIZE);
     cname = calloc(tmpsize, sizeof(char));
     memcpy(cname, name, tmpsize);
-    memset(cname+tmpsize, '\0', 1);
+    memset(cname+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(surname), CONTACT_UNIDB_STRING_SIZE);
     csurname = calloc(tmpsize, sizeof(char));
     memcpy(csurname, surname, tmpsize);
-    memset(csurname+tmpsize, '\0', 1);
+    memset(csurname+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(birthdate), CONTACT_UNIDB_STRING_SIZE);
     cbirthdate = calloc(tmpsize, sizeof(char));
     memcpy(cbirthdate, birthdate, tmpsize);
-    memset(cbirthdate+tmpsize, '\0', 1);
+    memset(cbirthdate+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(email), CONTACT_UNIDB_SHORTSTRING_SIZE);
     cemail = calloc(tmpsize, sizeof(char));
     memcpy(cemail, email, tmpsize);
-    memset(cemail+tmpsize, '\0', 1);
+    memset(cemail+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(phone), CONTACT_UNIDB_SHORTSTRING_SIZE);
     cphone = calloc(tmpsize, sizeof(char));
     memcpy(cphone, phone, tmpsize);
-    memset(cphone+tmpsize, '\0', 1);
+    memset(cphone+tmpsize-1, '\0', 1);
 
     tmpsize = trimsize(strlen(address), CONTACT_UNIDB_STRING_SIZE);
     caddress = calloc(tmpsize, sizeof(char));
     memcpy(caddress, address, tmpsize);
-    memset(caddress+tmpsize, '\0', 1);
+    memset(caddress+tmpsize-1, '\0', 1);
 
     node->index = db->primary_key_serial;
     node->name = cname;
@@ -66,9 +66,21 @@ struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surnam
     node->left = NULL;
     node->right = NULL;
     node->parent = NULL;
+    node->btdir = false;
+    node->btseen = false;
 
     db->primary_key_serial++;
     return node;
+}
+
+void free_node(struct contact_uninode* node){
+    free(node->name);
+    free(node->surname);
+    free(node->birthdate);
+    free(node->email);
+    free(node->phone);
+    free(node->address);
+    free(node);
 }
 
 void dll_insert(contacts_unidb* db, struct contact_uninode* node){
@@ -96,6 +108,7 @@ void dll_remove(contacts_unidb* db, struct contact_uninode* node){
         db->first = node->right;
     else
         node->left->right = node->right;
+    free_node(node);
 }
 
 struct contact_uninode* dll_get_by_index(contacts_unidb* db, uint32_t index){
@@ -112,12 +125,7 @@ struct contact_uninode* dll_get_by_index(contacts_unidb* db, uint32_t index){
 
 void dll_free_node(struct contact_uninode* node){
     if (node == NULL) return;
-    free(node->name);
-    free(node->surname);
-    free(node->email);
-    free(node->phone);
-    free(node->address);
-    free(node);
+    free_node(node);
 }
 
 void dll_free_all(contacts_unidb* db){
@@ -125,11 +133,14 @@ void dll_free_all(contacts_unidb* db){
     curr = db->first;
     if (curr == NULL) return;
     next = curr->right;
-    
-    while (next != NULL){
-        dll_free_node(curr);
-        curr = next;
-        next = next->right;
+    if (next == NULL ){ dll_free_node(curr); }
+    else {
+        while (next != NULL){
+            dll_free_node(curr);
+            curr = next;
+            next = next->right;
+        }
+        dll_free_node(db->last);
     }
 }
 
@@ -236,6 +247,101 @@ void dll_sort(contacts_unidb* db, int (*comparator)(struct contact_uninode*, str
     dll_quickersort(&(db->first), &(db->last), comparator);
 }
 
+void bt_insert(contacts_unidb* db, struct contact_uninode* item){
+    if (db->first == NULL){ // set the root
+        db->first = item;
+        item->left = NULL;
+        item->right = NULL;
+        item->parent = NULL;
+        item->btdir = false;
+    }
+    else { //we need to go deeper
+        struct contact_uninode* curr = db->first; //set the root
+        bool inserted = false;
+        while (!inserted) {
+            if (curr->left == NULL) {
+                curr->left = item;
+                item->parent = curr;
+                inserted = true;
+            } else if (curr->right == NULL) {
+                curr->right = item;
+                item->parent = curr;
+                inserted = true;
+            } else { //we need to go far more deeper
+                curr->btdir = !curr->btdir;
+                curr = curr->btdir ? curr->right : curr->left;
+            }
+        }
+    }
+}
+
+void bt_free_descend(struct contact_uninode* node){
+    if (node->left) bt_free_descend(node->left);
+    if (node->right) bt_free_descend(node->right);
+    free_node(node);
+}
+
+void bt_free(contacts_unidb* db){
+    if (db->first) bt_free_descend(db->first);
+}
+
+void bt_iterator_reset_descend(struct contact_uninode* node){
+    node->btseen = false;
+    if (node->left) bt_iterator_reset_descend(node->left);
+    if (node->right) bt_iterator_reset_descend(node->right);
+}
+
+void bt_iterator_reset(contacts_unidb* db){
+    if (db->first == NULL) return;
+    bt_iterator_reset_descend(db->first);
+    struct contact_uninode* curr = db->first;
+    while (curr->left)
+        curr = curr->left;
+    db->current = curr;
+}
+
+bool bt_iterator_empty(contacts_unidb* db){
+    struct contact_uninode* curr = db->current;
+    if (curr->btseen && (!curr->left || curr->left->btseen) &&
+            (!curr->right || curr->right->btseen) &&
+            (!curr->parent || curr->parent->btseen)
+            )
+    {
+        return false;
+    }
+    return true;
+}
+
+struct contact_uninode* bt_iterator_next(contacts_unidb* db){
+    if (!db->first) return NULL;
+    struct contact_uninode* curr = db->current, *ret = db->current;
+    bool changed = true;
+    while (changed){ // do while we moving in the tree
+        changed = false;
+        while (curr->left && !curr->left->btseen){ //if can go left
+            curr = curr->left; // go left
+            changed = true;
+        }
+        while (curr->right && !curr->right->btseen){ // if can go right
+            curr = curr->right; // go right
+            changed = true;
+        }
+
+        if (!changed && !curr->btseen){
+            curr->btseen = true;
+            db->current = curr;
+        }
+
+        while (curr->parent && curr->parent->btseen){ // if can go up
+            curr = curr->parent; //go up
+            changed = true;
+        }
+    }
+    if (ret == db->current) return NULL;
+    return ret;
+
+}
+
 int comparator_surname(struct contact_uninode* first, struct contact_uninode* second){
     return strcmp(first->surname, second->surname);
 }
@@ -264,6 +370,9 @@ uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
     if (db->type == CONTACT_UNIDB_DLL){
         dll_insert(db, node);
     }
+    if (db->type == CONTACT_UNIDB_BT){
+        bt_insert(db, node);
+    }
 
     return node->index;
 }
@@ -274,6 +383,8 @@ void cunidb_free(contacts_unidb* db){
     if (db){
         if (db->type == CONTACT_UNIDB_DLL)
             dll_free_all(db);
+        if (db->type == CONTACT_UNIDB_BT)
+            bt_free(db);
         free(db);
     }
 
