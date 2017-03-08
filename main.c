@@ -48,6 +48,8 @@ int main(){
     printf("Adding CSV items...\n");
     parse_data("sample100.csv");
 
+    cunidb_sort(db, CONTACT_UNIDB_SORT_SURNAME);
+
     printf("Trying to delete item #74\n");
     cunidb_remove(db, cunidb_get(db, 74));
 
@@ -60,9 +62,9 @@ int main(){
         printf("#%d: %s %s\n", item->index, item->name, item->surname);
     }
 
-    printf("Trying to get index #2\n");
-    struct contact_uninode* item = cunidb_get(db, 2);
-    print_item(item);
+    printf("Trying to get index #73\n");
+    struct contact_uninode* item = cunidb_get(db, 73);
+    if (item) print_item(item);
 
     printf("Trying to find something...\n");
     item = cunidb_find(db, "An", "Finch", NULL, NULL, NULL, NULL);

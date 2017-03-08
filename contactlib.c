@@ -1,6 +1,7 @@
 #include "contactlib.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 size_t trimsize(size_t original, size_t limit){
     return original > limit ? limit : original;
@@ -102,7 +103,7 @@ struct contact_uninode* dll_get_by_index(contacts_unidb* db, uint32_t index){
     struct contact_uninode* ret = NULL;
     if (db->first != NULL){
         struct contact_uninode* curr = db->first;
-        while (curr->index != index && curr->right != NULL){
+        while (curr != NULL && curr->index != index){
             curr = curr->right;
         }
         ret = curr;
@@ -163,6 +164,84 @@ struct contact_uninode* dll_find(contacts_unidb* db, char* name, char* surname,
     return curr;
 }
 
+void dll_pintolist(struct contact_uninode** first, struct contact_uninode** last, struct contact_uninode* item){
+    if ((*first) == NULL)
+        (*first) = (*last) = item;
+    else {
+        item->left = (*last);
+        (*last)->right = item;
+        (*last) = item;
+        item->right = NULL;
+    }
+}
+
+void dll_quickersort(struct contact_uninode** first, struct contact_uninode** last,
+                     int (*comparator)(struct contact_uninode*, struct contact_uninode*)){
+//    if ((*first) == (*last)) return; //recurrence end condition
+    struct contact_uninode* x = (*first);
+    struct contact_uninode *q1_first=NULL, *q1_last=NULL, *q2_first=NULL, *q2_last=NULL,
+            *q3_first=NULL, *q3_last=NULL, *curr, *next;
+
+    q2_first = q2_last = x; // wyznacznik
+    curr = x->right;
+    x->left = NULL;
+    x->right = NULL;
+    while (curr != NULL){
+        next = curr->right;
+
+        //unpin
+        curr->left = NULL;
+        curr->right = NULL;
+        if (next) next->left = NULL;
+
+        int tmpres = (*comparator)(x, curr);
+        if (tmpres < 0){ //curr jest "wiekszy"
+            dll_pintolist(&q3_first, &q3_last, curr);
+        }
+        else if (tmpres > 0){
+            dll_pintolist(&q1_first, &q1_last, curr);
+        }
+        else {
+            dll_pintolist(&q2_first, &q2_last, curr);
+        }
+        curr = next;
+    }
+
+    //items are in separate groups, sort them
+    if (q1_first != NULL && q1_first != q1_last)
+        dll_quickersort(&q1_first, &q1_last, comparator);
+    if (q3_first != NULL && q3_first != q3_last)
+        dll_quickersort(&q3_first, &q3_last, comparator);
+
+    //and join them to get q1_first --> q3_last
+    if (q1_first == NULL) q1_first = q2_first;
+    else {
+        q1_last->right = q2_first;
+        q2_first->left = q1_last;
+    }
+
+    if (q3_first == NULL || q3_last == NULL)
+        q3_last = q2_last;
+    else {
+        q2_last->right = q3_first;
+        q3_first->left = q2_last;
+    }
+
+    //pass results to the references
+    (*last) = q3_last;
+    (*first) = q1_first;
+}
+
+void dll_sort(contacts_unidb* db, int (*comparator)(struct contact_uninode*, struct contact_uninode*)){
+    if (db->first == NULL) return;
+    dll_quickersort(&(db->first), &(db->last), comparator);
+}
+
+int comparator_surname(struct contact_uninode* first, struct contact_uninode* second){
+    return strcmp(first->surname, second->surname);
+}
+
+
 uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
     char* birthdate, char* email, char* phone, char* address){
     
@@ -222,4 +301,17 @@ void cunidb_remove(contacts_unidb *db, struct contact_uninode* item) {
     if (!item) return;
     if (db->type == CONTACT_UNIDB_DLL)
         dll_remove(db, item);
+}
+
+void cunidb_sort(contacts_unidb *db, int sorttype) {
+    int (*comparator)(struct contact_uninode*, struct contact_uninode*) = NULL;
+    switch (sorttype){
+        case CONTACT_UNIDB_SORT_SURNAME:
+        default:
+            comparator = &comparator_surname;
+            break;
+    }
+
+    if (db->type == CONTACT_UNIDB_DLL)
+        dll_sort(db, comparator);
 }

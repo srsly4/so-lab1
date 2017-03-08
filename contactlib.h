@@ -11,6 +11,13 @@
 #define CONTACT_UNIDB_STRING_SIZE 64
 #define CONTACT_UNIDB_SHORTSTRING_SIZE 24
 
+//#define CONTACT_UNIDB_SORT_NAME 1
+#define CONTACT_UNIDB_SORT_SURNAME 2
+#define CONTACT_UNIDB_SORT_BIRTDATE 4
+#define CONTACT_UNIDB_SORT_EMAIL 8
+#define CONTACT_UNIDB_SORT_PHONE 16
+//#define CONTACT_UNIDB_SORT_ADDRESS
+
 struct contact_uninode {
     struct contact_uninode* left; //and previous in DL-L
     struct contact_uninode* right; //and next in DL-L
@@ -50,6 +57,8 @@ struct contact_uninode* cunidb_iterator_next(contacts_unidb* db);
 //finding functions
 struct contact_uninode* cunidb_find(contacts_unidb* db, char* name, char* surname,
                                     char* birthdate, char* email, char* phone, char* address);
+
+void cunidb_sort(contacts_unidb* db, int sorttype);
 
 #endif
 
