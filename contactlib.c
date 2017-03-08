@@ -85,6 +85,19 @@ void dll_insert(contacts_unidb* db, struct contact_uninode* node){
     }
 }
 
+void dll_remove(contacts_unidb* db, struct contact_uninode* node){
+    if (!node->right) {
+        db->last = node->left;
+    }
+    else {
+        node->right->left = node->left;
+    }
+    if (!node->left)
+        db->first = node->right;
+    else
+        node->left->right = node->right;
+}
+
 struct contact_uninode* dll_get_by_index(contacts_unidb* db, uint32_t index){
     struct contact_uninode* ret = NULL;
     if (db->first != NULL){
@@ -203,4 +216,10 @@ struct contact_uninode *cunidb_find(contacts_unidb* db, char* name, char* surnam
     if (db->type == CONTACT_UNIDB_DLL)
         return dll_find(db, name, surname, birthdate, email, phone, address);
     return NULL;
+}
+
+void cunidb_remove(contacts_unidb *db, struct contact_uninode* item) {
+    if (!item) return;
+    if (db->type == CONTACT_UNIDB_DLL)
+        dll_remove(db, item);
 }

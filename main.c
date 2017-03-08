@@ -48,7 +48,9 @@ int main(){
     printf("Adding CSV items...\n");
     parse_data("sample100.csv");
 
-    printf("Finished adding items!\n");
+    printf("Trying to delete item #74\n");
+    cunidb_remove(db, cunidb_get(db, 74));
+
     printf("Iterating through elemets:\n");
 
     cunidb_iterator_reset(db);
