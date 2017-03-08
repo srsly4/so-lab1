@@ -134,6 +134,22 @@ struct contact_uninode* dll_iterator_next(contacts_unidb *db){
     return ret;
 }
 
+struct contact_uninode* dll_find(contacts_unidb* db, char* name, char* surname,
+                                 char* birthdate, char* email, char* phone, char* address){
+    struct contact_uninode* curr = db->first;
+    while (curr != NULL){
+        if (!(name && !strstr(curr->name, name))
+                && !(surname && !strstr(curr->surname, surname))
+                && !(birthdate && !strstr(curr->birthdate, birthdate))
+                && !(email && !strstr(curr->email, email))
+                && !(phone && !strstr(curr->phone, phone))
+                && !(address && !strstr(curr->address, address)))
+            return curr;
+        curr = curr->right;
+    }
+    return curr;
+}
+
 uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
     char* birthdate, char* email, char* phone, char* address){
     
@@ -179,5 +195,12 @@ bool cunidb_iterator_empty(contacts_unidb *db) {
 struct contact_uninode *cunidb_iterator_next(contacts_unidb *db) {
     if (db->type == CONTACT_UNIDB_DLL)
         return dll_iterator_next(db);
+    return NULL;
+}
+
+struct contact_uninode *cunidb_find(contacts_unidb* db, char* name, char* surname,
+                                    char* birthdate, char* email, char* phone, char* address) {
+    if (db->type == CONTACT_UNIDB_DLL)
+        return dll_find(db, name, surname, birthdate, email, phone, address);
     return NULL;
 }

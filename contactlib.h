@@ -47,6 +47,10 @@ void cunidb_iterator_reset(contacts_unidb* db);
 bool cunidb_iterator_empty(contacts_unidb* db);
 struct contact_uninode* cunidb_iterator_next(contacts_unidb* db);
 
+//finding functions
+struct contact_uninode* cunidb_find(contacts_unidb* db, char* name, char* surname,
+                                    char* birthdate, char* email, char* phone, char* address);
+
 #endif
 
 

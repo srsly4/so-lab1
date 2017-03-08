@@ -30,6 +30,11 @@ int parse_data(const char* filename){
     return 0;
 }
 
+void print_item(struct contact_uninode* item){
+    printf("%-12s %-12s %-10s %-12s %-12s %-12s\n", item->name, item->surname,
+           item->birthdate, item->email, item->phone, item->address);
+}
+
 int main(){
     printf("Hello world, oh deer.\n");
     int i = 0;
@@ -55,7 +60,12 @@ int main(){
 
     printf("Trying to get index #2\n");
     struct contact_uninode* item = cunidb_get(db, 2);
-    printf("#%d: %s %s\n", item->index, item->name, item->surname);
+    print_item(item);
+
+    printf("Trying to find something...\n");
+    item = cunidb_find(db, "An", "Finch", NULL, NULL, NULL, NULL);
+    if (item)
+        print_item(item);
 
     printf("Deleting from memory...\n");
     cunidb_free(db);
