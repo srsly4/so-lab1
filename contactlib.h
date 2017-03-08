@@ -18,7 +18,7 @@ struct contact_uninode {
     uint32_t index;
     char* name;
     char* surname;
-    time_t birthdate;
+    char* birthdate;
     char* email;
     char* phone;
     char* address;
@@ -38,7 +38,7 @@ contacts_unidb* cunidb_initialize(int type);
 
 void cunidb_free(contacts_unidb* db);
 uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
-    time_t birthdate, char* email, char* phone, char* address); //returns an index of created element
+    char* birthdate, char* email, char* phone, char* address); //returns an index of created element
 int cunidb_remove(contacts_unidb* db, uint32_t type);
 struct contact_uninode* cunidb_get(contacts_unidb* db, uint32_t index);
 //iterator

@@ -20,10 +20,10 @@ contacts_unidb* cunidb_initialize(int type){
 }
 
 struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surname,
-    time_t birthdate, char* email, char* phone, char* address){
+    char* birthdate, char* email, char* phone, char* address){
     struct contact_uninode* node = malloc(sizeof(struct contact_uninode));
 
-    char *cname, *csurname, *cemail, *cphone, *caddress;
+    char *cname, *csurname, *cbirthdate, *cemail, *cphone, *caddress;
     size_t tmpsize;
 
     tmpsize = trimsize(strlen(name), CONTACT_UNIDB_STRING_SIZE);
@@ -35,6 +35,11 @@ struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surnam
     csurname = calloc(tmpsize, sizeof(char));
     memcpy(csurname, surname, tmpsize);
     memset(csurname+tmpsize, '\0', 1);
+
+    tmpsize = trimsize(strlen(birthdate), CONTACT_UNIDB_STRING_SIZE);
+    cbirthdate = calloc(tmpsize, sizeof(char));
+    memcpy(cbirthdate, birthdate, tmpsize);
+    memset(cbirthdate+tmpsize, '\0', 1);
 
     tmpsize = trimsize(strlen(email), CONTACT_UNIDB_SHORTSTRING_SIZE);
     cemail = calloc(tmpsize, sizeof(char));
@@ -54,7 +59,7 @@ struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surnam
     node->index = db->primary_key_serial;
     node->name = cname;
     node->surname = csurname;
-    node->birthdate = birthdate;
+    node->birthdate = cbirthdate;
     node->email = cemail;
     node->phone = cphone;
     node->address = caddress;
@@ -130,7 +135,7 @@ struct contact_uninode* dll_iterator_next(contacts_unidb *db){
 }
 
 uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
-    time_t birthdate, char* email, char* phone, char* address){
+    char* birthdate, char* email, char* phone, char* address){
     
     struct contact_uninode* node = create_node(db, name, surname, birthdate, email, phone, address);
     if (db->type == CONTACT_UNIDB_DLL){
