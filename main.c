@@ -12,6 +12,14 @@ int main(){
     cunidb_add(db, "Anna", "Kowalska", 10, "test@test.pl", "123456789", "Testowo 00-000, Testowa 00");
 
     printf("Finished adding items!\n");
+    printf("Iterating through elemets:\n");
+
+    cunidb_iterator_reset(db);
+    while (!cunidb_iterator_empty(db))
+    {
+        struct contact_uninode* item = cunidb_iterator_next(db);
+        printf("#%d: %s %s\n", item->index, item->name, item->surname);
+    }
 
     cunidb_free(db);
     printf("Deleted from memory.\n");

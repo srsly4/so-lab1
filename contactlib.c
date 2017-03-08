@@ -28,23 +28,28 @@ struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surnam
 
     tmpsize = trimsize(strlen(name), CONTACT_UNIDB_STRING_SIZE);
     cname = calloc(tmpsize, sizeof(char));
-    memset(cname+tmpsize-1, '\0', 1);
+    memcpy(cname, name, tmpsize);
+    memset(cname+tmpsize, '\0', 1);
 
     tmpsize = trimsize(strlen(surname), CONTACT_UNIDB_STRING_SIZE);
     csurname = calloc(tmpsize, sizeof(char));
-    memset(csurname+tmpsize-1, '\0', 1);
+    memcpy(csurname, surname, tmpsize);
+    memset(csurname+tmpsize, '\0', 1);
 
     tmpsize = trimsize(strlen(email), CONTACT_UNIDB_SHORTSTRING_SIZE);
     cemail = calloc(tmpsize, sizeof(char));
-    memset(cemail+tmpsize-1, '\0', 1);
+    memcpy(cemail, email, tmpsize);
+    memset(cemail+tmpsize, '\0', 1);
 
     tmpsize = trimsize(strlen(phone), CONTACT_UNIDB_SHORTSTRING_SIZE);
     cphone = calloc(tmpsize, sizeof(char));
-    memset(cphone+tmpsize-1, '\0', 1);
+    memcpy(cphone, phone, tmpsize);
+    memset(cphone+tmpsize, '\0', 1);
 
     tmpsize = trimsize(strlen(address), CONTACT_UNIDB_STRING_SIZE);
     caddress = calloc(tmpsize, sizeof(char));
-    memset(caddress+tmpsize-1, '\0', 1);
+    memcpy(caddress, address, tmpsize);
+    memset(caddress+tmpsize, '\0', 1);
 
     node->index = db->primary_key_serial;
     node->name = cname;
@@ -75,6 +80,18 @@ void dll_insert(contacts_unidb* db, struct contact_uninode* node){
     }
 }
 
+struct contact_uninode* dll_get_by_index(contacts_unidb* db, uint32_t index){
+    struct contact_uninode* ret = NULL;
+    if (db->first != NULL){
+        struct contact_uninode* curr = db->first;
+        while (curr->index != index && curr->right != NULL){
+            curr = curr->right;
+        }
+        ret = curr;
+    }
+    return ret;
+}
+
 void dll_free_node(struct contact_uninode* node){
     if (node == NULL) return;
     free(node->name);
@@ -98,6 +115,20 @@ void dll_free_all(contacts_unidb* db){
     }
 }
 
+void dll_iterator_reset(contacts_unidb *db){
+    db->current = db->first;
+}
+
+bool dll_iterator_empty(contacts_unidb *db){
+    return db->current == NULL;
+}
+struct contact_uninode* dll_iterator_next(contacts_unidb *db){
+    struct contact_uninode* ret = db->current;
+    if (db->current != NULL)
+        db->current = db->current->right;
+    return ret;
+}
+
 uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
     time_t birthdate, char* email, char* phone, char* address){
     
@@ -109,12 +140,39 @@ uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
     return node->index;
 }
 
+
+
 void cunidb_free(contacts_unidb* db){
     if (db){
-        //todo: iterate through items and free
         if (db->type == CONTACT_UNIDB_DLL)
             dll_free_all(db);
         free(db);
     }
 
+}
+
+struct contact_uninode *cunidb_get(contacts_unidb *db, uint32_t index) {
+    if (db->type == CONTACT_UNIDB_DLL)
+        return dll_get_by_index(db, index);
+    else return NULL;
+
+}
+
+void cunidb_iterator_reset(contacts_unidb *db) {
+    if (db->type == CONTACT_UNIDB_DLL)
+        dll_iterator_reset(db);
+
+}
+
+bool cunidb_iterator_empty(contacts_unidb *db) {
+    if (db->type == CONTACT_UNIDB_DLL)
+        return dll_iterator_empty(db);
+
+    return true;
+}
+
+struct contact_uninode *cunidb_iterator_next(contacts_unidb *db) {
+    if (db->type == CONTACT_UNIDB_DLL)
+        return dll_iterator_next(db);
+    return NULL;
 }

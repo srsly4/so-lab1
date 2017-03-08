@@ -40,8 +40,10 @@ void cunidb_free(contacts_unidb* db);
 uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
     time_t birthdate, char* email, char* phone, char* address); //returns an index of created element
 int cunidb_remove(contacts_unidb* db, uint32_t type);
+struct contact_uninode* cunidb_get(contacts_unidb* db, uint32_t index);
 //iterator
 
+void cunidb_iterator_reset(contacts_unidb* db);
 bool cunidb_iterator_empty(contacts_unidb* db);
 struct contact_uninode* cunidb_iterator_next(contacts_unidb* db);
 
