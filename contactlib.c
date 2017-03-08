@@ -15,7 +15,6 @@ contacts_unidb* cunidb_initialize(int type){
     db->type = type;
     db->first = NULL;
     db->last = NULL;
-    db->size = 0;
     db->primary_key_serial = 1; //let begin with 1 index
     db->current = NULL;
 }
@@ -241,6 +240,22 @@ int comparator_surname(struct contact_uninode* first, struct contact_uninode* se
     return strcmp(first->surname, second->surname);
 }
 
+int comparator_name(struct contact_uninode* first, struct contact_uninode* second){
+    return strcmp(first->name, second->name);
+}
+
+int comparator_email(struct contact_uninode* first, struct contact_uninode* second){
+    return strcmp(first->email, second->email);
+}
+
+int comparator_phone(struct contact_uninode* first, struct contact_uninode* second){
+    return strcmp(first->phone, second->phone);
+}
+
+int comparator_birtdate(struct contact_uninode* first, struct contact_uninode* second){
+    return strcmp(first->birthdate, second->birthdate);
+}
+
 
 uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
     char* birthdate, char* email, char* phone, char* address){
@@ -306,6 +321,18 @@ void cunidb_remove(contacts_unidb *db, struct contact_uninode* item) {
 void cunidb_sort(contacts_unidb *db, int sorttype) {
     int (*comparator)(struct contact_uninode*, struct contact_uninode*) = NULL;
     switch (sorttype){
+        case CONTACT_UNIDB_SORT_BIRTDATE:
+            comparator = &comparator_birtdate;
+            break;
+        case CONTACT_UNIDB_SORT_EMAIL:
+            comparator = &comparator_email;
+            break;
+        case CONTACT_UNIDB_SORT_PHONE:
+            comparator = &comparator_phone;
+            break;
+        case CONTACT_UNIDB_SORT_NAME:
+            comparator = &comparator_name;
+            break;
         case CONTACT_UNIDB_SORT_SURNAME:
         default:
             comparator = &comparator_surname;

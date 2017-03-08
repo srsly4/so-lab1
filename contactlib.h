@@ -11,12 +11,12 @@
 #define CONTACT_UNIDB_STRING_SIZE 64
 #define CONTACT_UNIDB_SHORTSTRING_SIZE 24
 
-//#define CONTACT_UNIDB_SORT_NAME 1
+#define CONTACT_UNIDB_SORT_NAME 1
 #define CONTACT_UNIDB_SORT_SURNAME 2
 #define CONTACT_UNIDB_SORT_BIRTDATE 4
 #define CONTACT_UNIDB_SORT_EMAIL 8
 #define CONTACT_UNIDB_SORT_PHONE 16
-//#define CONTACT_UNIDB_SORT_ADDRESS
+//#define CONTACT_UNIDB_SORT_ADDRESS 32
 
 struct contact_uninode {
     struct contact_uninode* left; //and previous in DL-L
@@ -35,7 +35,6 @@ typedef struct contacts_unidb {
     struct contact_uninode* first; //one and only in case of BT
     struct contact_uninode* last; //used only for DL-L
     int type;
-    uint32_t size;
     uint32_t primary_key_serial;
     struct contact_uninode* current;
 } contacts_unidb;

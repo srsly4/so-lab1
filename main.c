@@ -58,8 +58,7 @@ int main(){
     cunidb_iterator_reset(db);
     while (!cunidb_iterator_empty(db))
     {
-        struct contact_uninode* item = cunidb_iterator_next(db);
-        printf("#%d: %s %s\n", item->index, item->name, item->surname);
+        print_item(cunidb_iterator_next(db));
     }
 
     printf("Trying to get index #73\n");
