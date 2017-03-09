@@ -68,6 +68,7 @@ struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surnam
     node->parent = NULL;
     node->btdir = false;
     node->btseen = false;
+    node->is_red = false;
 
     db->primary_key_serial++;
     return node;
@@ -247,32 +248,163 @@ void dll_sort(contacts_unidb* db, int (*comparator)(struct contact_uninode*, str
     dll_quickersort(&(db->first), &(db->last), comparator);
 }
 
+struct contact_uninode* bt_get_by_index(contacts_unidb* db, uint32_t index){
+    struct contact_uninode* curr = db->first;
+    while (curr != NULL && curr->index != index){
+        if (index < curr->index) curr = curr->left;
+        else curr = curr->right;
+    }
+
+    return curr;
+}
+
+struct contact_uninode* bt_get_min_of(struct contact_uninode* item){
+    if (item != NULL)
+        while (item->left != NULL)
+            item = item->left;
+    return item;
+}
+
+struct contact_uninode* bt_get_succ_of(struct contact_uninode* item){
+    struct contact_uninode* curr;
+    if (item == NULL) return item;
+
+    //if there is a right child go get its minimum
+    if (item->right != NULL) return bt_get_min_of(item->right);
+    else {
+        //if there isn't right child we have to go up
+        curr = item->parent;
+        while (curr != NULL && item == curr->right){
+            //go up while we are right child
+            item = curr;
+            curr = curr->parent;
+        }
+        return curr;
+    }
+}
+
+void bt_rotate_left_by(contacts_unidb* db, struct contact_uninode* a){
+    struct contact_uninode *b, *parent;
+    b = a->right;
+    if (b != NULL){
+        parent = a->parent;
+        a->right = b->left;
+        if (a->right != NULL) a->right->parent = a;
+
+        b->left = a;
+        b->parent = parent;
+        a->parent = b;
+
+        if (parent != NULL) {
+            if (parent->left == a)
+                parent->left = b;
+            else
+                parent->right = b;
+        }
+        else
+            db->first = b;
+    }
+}
+
+void bt_rotate_right_by(contacts_unidb* db, struct contact_uninode* a){
+    struct contact_uninode *b, *parent;
+    b = a->left;
+    if (b != NULL){
+        parent = a->parent;
+        a->left = b->right;
+        if (a->left != NULL) a->left->parent = a;
+
+        b->right = a;
+        b->parent = parent;
+        a->parent = b;
+
+        if (parent != NULL) {
+            if (parent->left == a)
+                parent->left = b;
+            else
+                parent->right = b;
+        }
+        else
+            db->first = b;
+    }
+}
+
+
 void bt_insert(contacts_unidb* db, struct contact_uninode* item){
     if (db->first == NULL){ // set the root
         db->first = item;
         item->left = NULL;
         item->right = NULL;
         item->parent = NULL;
-        item->btdir = false;
+        item->is_red = false; //the root is black
     }
     else { //we need to go deeper
-        struct contact_uninode* curr = db->first; //set the root
-        bool inserted = false;
-        while (!inserted) {
-            if (curr->left == NULL) {
-                curr->left = item;
-                item->parent = curr;
-                inserted = true;
-            } else if (curr->right == NULL) {
-                curr->right = item;
-                item->parent = curr;
-                inserted = true;
-            } else { //we need to go far more deeper
-                curr->btdir = !curr->btdir;
-                curr = curr->btdir ? curr->right : curr->left;
+        struct contact_uninode* curr = db->first;
+        while(true){
+            if (item->index < curr->index){
+                if (curr->left == NULL){
+                    curr->left = item;
+                    item->parent = curr;
+                    break;
+                }
+                curr = curr->left;
+            }
+            else {
+                if (curr->right == NULL){
+                    curr->right = item;
+                    item->parent = curr;
+                    break;
+                }
+                curr = curr->right;
+            }
+        }
+
+        //node has been inserted
+        item->is_red = true; // we colorize newly-inserted as red
+        struct contact_uninode* y;
+        while (item->parent != NULL && item->parent->is_red){
+            if (item->parent == item->parent->parent->left){ //if parent are left child
+                y = item->parent->parent->right; //uncle
+                if (y && y->is_red){ //1st case, NULL is obviously black
+                    item->parent->is_red = false;
+                    y->is_red = false;
+                    item->parent->parent->is_red = true;
+                    item = item->parent->parent;
+                    continue;
+                }
+                if (item == item->parent->right){
+                    item = item->parent;
+                    bt_rotate_left_by(db, item);
+                }
+
+                item->parent->is_red = false;
+                item->parent->parent->is_red = true;
+                bt_rotate_right_by(db, item->parent->parent);
+                break;
+            }
+            else { //mirrored cases
+                y = item->parent->parent->left;
+                if (y && y->is_red){
+                    item->is_red = false;
+                    y->is_red = false;
+                    item->parent->parent->is_red = true;
+                    item = item->parent->parent;
+                    continue;
+                }
+
+                if (item == item->parent->left){
+                    item = item->parent;
+                    bt_rotate_right_by(db, item);
+                }
+
+                item->parent->is_red = false;
+                item->parent->parent->is_red = true;
+                bt_rotate_left_by(db, item->parent->parent);
+                break;
             }
         }
     }
+    db->first->is_red = false;
 }
 
 void bt_free_descend(struct contact_uninode* node){
@@ -285,61 +417,20 @@ void bt_free(contacts_unidb* db){
     if (db->first) bt_free_descend(db->first);
 }
 
-void bt_iterator_reset_descend(struct contact_uninode* node){
-    node->btseen = false;
-    if (node->left) bt_iterator_reset_descend(node->left);
-    if (node->right) bt_iterator_reset_descend(node->right);
-}
 
 void bt_iterator_reset(contacts_unidb* db){
     if (db->first == NULL) return;
-    bt_iterator_reset_descend(db->first);
-    struct contact_uninode* curr = db->first;
-    while (curr->left)
-        curr = curr->left;
-    db->current = curr;
+    db->current = bt_get_min_of(db->first);
 }
 
 bool bt_iterator_empty(contacts_unidb* db){
-    struct contact_uninode* curr = db->current;
-    if (curr->btseen && (!curr->left || curr->left->btseen) &&
-            (!curr->right || curr->right->btseen) &&
-            (!curr->parent || curr->parent->btseen)
-            )
-    {
-        return false;
-    }
-    return true;
+    return db->current == NULL;
 }
 
 struct contact_uninode* bt_iterator_next(contacts_unidb* db){
-    if (!db->first) return NULL;
-    struct contact_uninode* curr = db->current, *ret = db->current;
-    bool changed = true;
-    while (changed){ // do while we moving in the tree
-        changed = false;
-        while (curr->left && !curr->left->btseen){ //if can go left
-            curr = curr->left; // go left
-            changed = true;
-        }
-        while (curr->right && !curr->right->btseen){ // if can go right
-            curr = curr->right; // go right
-            changed = true;
-        }
-
-        if (!changed && !curr->btseen){
-            curr->btseen = true;
-            db->current = curr;
-        }
-
-        while (curr->parent && curr->parent->btseen){ // if can go up
-            curr = curr->parent; //go up
-            changed = true;
-        }
-    }
-    if (ret == db->current) return NULL;
-    return ret;
-
+    struct contact_uninode* tmp = db->current;
+    db->current = bt_get_succ_of(tmp);
+    return tmp;
 }
 
 int comparator_surname(struct contact_uninode* first, struct contact_uninode* second){
@@ -400,19 +491,24 @@ struct contact_uninode *cunidb_get(contacts_unidb *db, uint32_t index) {
 void cunidb_iterator_reset(contacts_unidb *db) {
     if (db->type == CONTACT_UNIDB_DLL)
         dll_iterator_reset(db);
+    if (db->type == CONTACT_UNIDB_BT)
+        bt_iterator_reset(db);
 
 }
 
 bool cunidb_iterator_empty(contacts_unidb *db) {
     if (db->type == CONTACT_UNIDB_DLL)
         return dll_iterator_empty(db);
-
+    if (db->type == CONTACT_UNIDB_BT)
+        return bt_iterator_empty(db);
     return true;
 }
 
 struct contact_uninode *cunidb_iterator_next(contacts_unidb *db) {
     if (db->type == CONTACT_UNIDB_DLL)
         return dll_iterator_next(db);
+    if (db->type == CONTACT_UNIDB_BT)
+        return bt_iterator_next(db);
     return NULL;
 }
 

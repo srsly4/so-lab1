@@ -24,6 +24,7 @@ struct contact_uninode {
     struct contact_uninode* parent; //only in BT
     bool btdir; //direction for inserting in BT
     bool btseen; //iterator flag in BT
+    bool is_red; //color for BT node
     uint32_t index;
     char* name;
     char* surname;

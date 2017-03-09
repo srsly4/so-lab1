@@ -31,52 +31,60 @@ int parse_data(const char* filename){
 }
 
 void print_item(struct contact_uninode* item){
-    printf("%-12s %-12s %-10s %-12s %-12s %-12s\n", item->name, item->surname,
+    printf("#%d %-12s %-12s %-10s %-12s %-12s %-12s\n", item->index, item->name, item->surname,
            item->birthdate, item->email, item->phone, item->address);
 }
 
 int main(){
-    db = cunidb_initialize(CONTACT_UNIDB_DLL);
-
-    printf("Adding CSV items...\n");
-    parse_data("sample100.csv");
-
-    cunidb_sort(db, CONTACT_UNIDB_SORT_SURNAME);
-
-    printf("Trying to delete item #74\n");
-    cunidb_remove(db, cunidb_get(db, 74));
-
-    printf("Iterating through elemets:\n");
-
-    cunidb_iterator_reset(db);
-    while (!cunidb_iterator_empty(db))
-    {
-        print_item(cunidb_iterator_next(db));
-    }
-
-    printf("Trying to get index #73\n");
-    struct contact_uninode* item = cunidb_get(db, 73);
-    if (item) print_item(item);
-
-    printf("Trying to find something...\n");
-    item = cunidb_find(db, "An", "Finch", NULL, NULL, NULL, NULL);
-    if (item)
-        print_item(item);
-
-    printf("Deleting from memory...\n");
-    cunidb_free(db);
-
-
-
-    /* BinaryTree Test */
-//    db = cunidb_initialize(CONTACT_UNIDB_BT);
-//    printf("Initialized.\n");
+//    db = cunidb_initialize(CONTACT_UNIDB_DLL);
+//
 //    printf("Adding CSV items...\n");
 //    parse_data("sample100.csv");
 //
-//    printf("Freeing memory...");
+//    cunidb_sort(db, CONTACT_UNIDB_SORT_SURNAME);
+//
+//    printf("Trying to delete item #74\n");
+//    cunidb_remove(db, cunidb_get(db, 74));
+//
+//    printf("Iterating through elemets:\n");
+//
+//    cunidb_iterator_reset(db);
+//    while (!cunidb_iterator_empty(db))
+//    {
+//        print_item(cunidb_iterator_next(db));
+//    }
+//
+//    printf("Trying to get index #73\n");
+//    struct contact_uninode* item = cunidb_get(db, 73);
+//    if (item) print_item(item);
+//
+//    printf("Trying to find something...\n");
+//    item = cunidb_find(db, "An", "Finch", NULL, NULL, NULL, NULL);
+//    if (item)
+//        print_item(item);
+//
+//    printf("Deleting from memory...\n");
 //    cunidb_free(db);
 //
-//    printf("Finished!");
+
+
+    /* BinaryTree Test */
+    db = cunidb_initialize(CONTACT_UNIDB_BT);
+    printf("Initialized.\n");
+    printf("Adding CSV items...\n");
+    parse_data("sample100.csv");
+
+    printf("Iterating throught BT:\n");
+    cunidb_iterator_reset(db);
+    while (!cunidb_iterator_empty(db)){
+        struct contact_uninode* tt = cunidb_iterator_next(db);
+        if (tt) print_item(tt);
+    }
+
+
+    printf("Freeing memory...\n");
+    cunidb_free(db);
+
+    printf("Finished!");
     return 0;
 }
