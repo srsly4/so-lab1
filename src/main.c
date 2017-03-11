@@ -1,18 +1,65 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
-#include <sys/times.h>
-#include <sys/types.h>
 #include <sys/resource.h>
 #include <stdlib.h>
-#include "contactlib.h"
+#include <dlfcn.h>
+#include "contact.h"
+#include <unistd.h>
+#include <errno.h>
+
+#ifdef DYNLIB
+contacts_unidb* (*d_cunidb_initialize)(int type);
+void (*d_cunidb_free)(contacts_unidb* db);
+struct contact_uninode*  (*d_cunidb_add)(contacts_unidb* db, char* name, char* surname,
+                                         char* birthdate, char* email, char* phone, char* address); //returns an index of created element
+void (*d_cunidb_remove)(contacts_unidb* db, struct contact_uninode* item);
+struct contact_uninode* (*d_cunidb_get)(contacts_unidb* db, uint32_t index);
+
+//iterator
+void (*d_cunidb_iterator_reset)(contacts_unidb* db);
+bool (*d_cunidb_iterator_empty)(contacts_unidb* db);
+struct contact_uninode* (*d_cunidb_iterator_next)(contacts_unidb* db);
+
+//finding functions
+struct contact_uninode* (*d_cunidb_find)(contacts_unidb* db, char* name, char* surname,
+                                         char* birthdate, char* email, char* phone, char* address);
+
+void (*d_cunidb_sort)(contacts_unidb* db, int sorttype);
+
+void* contactlib;
+void load_lib(){
+
+    contactlib = dlopen("./../lib/libcontact-shared.so", RTLD_LAZY);
+    if (!contactlib){
+        fprintf(stderr, "Fatal error: could not have loaded dynamic library: %s\n", dlerror());
+        exit(1);
+    }
+
+    d_cunidb_initialize = dlsym(contactlib, "cunidb_initialize");
+    d_cunidb_free = dlsym(contactlib, "cunidb_free");
+    d_cunidb_add = dlsym(contactlib, "cunidb_add");
+    d_cunidb_remove = dlsym(contactlib, "cunidb_remove");
+    d_cunidb_get = dlsym(contactlib, "cunidb_get");
+    d_cunidb_iterator_reset = dlsym(contactlib, "cunidb_iterator_reset");
+    d_cunidb_iterator_empty = dlsym(contactlib, "cunidb_iterator_empty");
+    d_cunidb_iterator_next = dlsym(contactlib, "cunidb_iterator_next");
+    d_cunidb_find = dlsym(contactlib, "cunidb_find");
+    d_cunidb_sort = dlsym(contactlib, "cunidb_sort");
+
+}
+
+void close_lib(){
+    dlclose(contactlib);
+}
+#endif
 
 
 int parse_data(contacts_unidb* db, const char* filename){
     FILE* file = fopen(filename, "r");
     if (!file){
-        perror("Could not have opened sample data file.");
-        return 1;
+        fprintf(stderr, "Fatal error: Could not have opened sample data file.\n");
+        exit(1);
     }
     char line[448];
     int curr = 0, field_ndx = 0;
@@ -32,7 +79,11 @@ int parse_data(contacts_unidb* db, const char* filename){
             }
             curr++;
         }
+#ifndef DYNLIB
         cunidb_add(db, fields[0], fields[1], fields[2], fields[3], fields[4], fields[5]);
+#else
+        (*d_cunidb_add)(db, fields[0], fields[1], fields[2], fields[3], fields[4], fields[5]);
+#endif
 
     }
     fclose(file);
@@ -77,33 +128,52 @@ void test_cunidb(contacts_unidb* db){
 
     start_measuring();
     printf("=>Importing data...");
-    parse_data(db, "sample1000.csv");
+    parse_data(db, "../sample1000.csv");
     printf(" [+]");
     print_measured();
 
     start_measuring();
     printf("=>Listing data...");
+#ifndef DYNLIB
     cunidb_iterator_reset(db);
     int counter = 0;
     while (!cunidb_iterator_empty(db)){
         struct contact_uninode* tt = cunidb_iterator_next(db);
         if (tt) counter++;
     }
+#else
+    (*d_cunidb_iterator_reset)(db);
+    int counter = 0;
+    while (!(*d_cunidb_iterator_empty)(db)){
+        struct contact_uninode* tt = (*d_cunidb_iterator_next)(db);
+        if (tt) counter++;
+    }
+#endif
     printf(" [%d items][+]", counter);
     print_measured();
 
     start_measuring();
     printf("=>Adding item (to the end)...");
+#ifndef DYNLIB
     struct contact_uninode* added =
             cunidb_add(db, "Test", "Added", "01-01-2001",
                        "test@test.pl", "123456789", "TestCity, Test 15");
+#else
+    struct contact_uninode* added =
+            (*d_cunidb_add)(db, "Test", "Added", "01-01-2001",
+                       "test@test.pl", "123456789", "TestCity, Test 15");
+#endif
     printf(" [#%d][+]", added->index);
     print_measured();
 
     start_measuring();
     struct contact_uninode* searched;
     printf("=>Searching for first item from file... (optimistic)");
+#ifndef DYNLIB
     searched = cunidb_find(db, "H", "Bell", NULL, "hbell0@ezinearticles.com", NULL, NULL);
+#else
+    searched = (*d_cunidb_find)(db, "H", "Bell", NULL, "hbell0@ezinearticles.com", NULL, NULL);
+#endif
     if (searched) {
         printf(" [#%d][+]", searched->index);
     }
@@ -112,7 +182,11 @@ void test_cunidb(contacts_unidb* db){
 
     start_measuring();
     printf("=>Searching for the last item from file... (pessimistic)");
+#ifndef DYNLIB
     searched = cunidb_find(db, "C", "Perez", NULL, NULL, NULL, NULL);
+#else
+    searched = (*d_cunidb_find)(db, "C", "Perez", NULL, NULL, NULL, NULL);
+#endif
     if (searched) {
         printf(" [#%d][+]", searched->index);
     }
@@ -122,36 +196,62 @@ void test_cunidb(contacts_unidb* db){
     start_measuring();
     printf("=>Deleting random item #[2, n-1]...");
     uint32_t ndx = (rand() % (added->index-1)) + 1;
+#ifndef DYNLIB
     cunidb_remove(db, cunidb_get(db, ndx));
+#else
+    (*d_cunidb_remove)(db, (*d_cunidb_get)(db, ndx));
+
+#endif
     printf(" [#%d][+]", ndx);
     print_measured();
 
     start_measuring();
     printf("=>Deleting first item (or root)... (optimistic)");
+#ifndef DYNLIB
     cunidb_remove(db, db->first);
+#else
+    (*d_cunidb_remove)(db, db->first);
+#endif
     printf(" [+]");
     print_measured();
 
     start_measuring();
     printf("=>Deleting last item (by index)... (pessimistic)");
+#ifndef DYNLIB
     cunidb_remove(db, cunidb_get(db, added->index-1));
+#else
+    (*d_cunidb_remove)(db, (*d_cunidb_get)(db, added->index-1));
+#endif
     printf(" [+]");
     print_measured();
 
     start_measuring();
     printf("=>Rebuilding database with surname sorting...");
+#ifndef DYNLIB
     cunidb_sort(db, CONTACT_UNIDB_SORT_SURNAME);
+#else
+    (*d_cunidb_sort)(db, CONTACT_UNIDB_SORT_SURNAME);
+#endif
     printf(" [+]");
     print_measured();
 
     start_measuring();
     printf("=>Listing data again (checking db consistency)...");
+#ifndef DYNLIB
     cunidb_iterator_reset(db);
     counter = 0;
     while (!cunidb_iterator_empty(db)){
         struct contact_uninode* tt = cunidb_iterator_next(db);
         if (tt) counter++;
     }
+#else
+    (*d_cunidb_iterator_reset)(db);
+    counter = 0;
+    while (!(*d_cunidb_iterator_empty)(db)){
+        struct contact_uninode* tt = (*d_cunidb_iterator_next)(db);
+        if (tt) counter++;
+    }
+#endif
     printf(" [%d items][+]", counter);
     print_measured();
 
@@ -168,6 +268,11 @@ int main(void){
     time_t t;
     srand((unsigned int)time(&t));
 
+#ifdef DYNLIB
+    load_lib();
+#endif
+
+#ifndef DYNLIB
     contacts_unidb* db = cunidb_initialize(CONTACT_UNIDB_DLL);
     test_cunidb(db);
     cunidb_free(db);
@@ -175,6 +280,18 @@ int main(void){
     db = cunidb_initialize(CONTACT_UNIDB_BT);
     test_cunidb(db);
     cunidb_free(db);
+#else
+    contacts_unidb* db = (*d_cunidb_initialize)(CONTACT_UNIDB_DLL);
+    test_cunidb(db);
+    (*d_cunidb_free)(db);
 
+    db = (*d_cunidb_initialize)(CONTACT_UNIDB_BT);
+    test_cunidb(db);
+    (*d_cunidb_free)(db);
+#endif
+
+#ifdef DYNLIB
+    close_lib();
+#endif
     return 0;
 }
