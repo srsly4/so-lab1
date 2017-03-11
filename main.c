@@ -74,6 +74,13 @@ int main(){
     printf("Adding CSV items...\n");
     parse_data("sample100.csv");
 
+    printf("Trying to delete something...\n");
+    cunidb_remove(db, cunidb_get(db, 14));
+    cunidb_remove(db, cunidb_get(db, 97));
+    cunidb_remove(db, cunidb_get(db, 1));
+    cunidb_remove(db, cunidb_get(db, 3));
+    cunidb_remove(db, cunidb_get(db, 78));
+
     printf("Iterating throught BT:\n");
     cunidb_iterator_reset(db);
     while (!cunidb_iterator_empty(db)){
@@ -81,6 +88,8 @@ int main(){
         if (tt) print_item(tt);
     }
 
+    struct contact_uninode* test = cunidb_get(db, 32);
+    print_item(test);
 
     printf("Freeing memory...\n");
     cunidb_free(db);

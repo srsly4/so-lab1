@@ -407,6 +407,108 @@ void bt_insert(contacts_unidb* db, struct contact_uninode* item){
     db->first->is_red = false;
 }
 
+void bt_delete(contacts_unidb* db, struct contact_uninode* item){
+    struct contact_uninode *w, *y, *z;
+
+    if (item->left == NULL || item->right == NULL)
+        y = item;
+    else
+        y = bt_get_succ_of(item);
+
+    if (y->left != NULL)
+        z = y->left;
+    else
+        z = y->right;
+
+    if (z)
+        z->parent = y->parent;
+
+    if (y->parent == NULL)
+        db->first = z;
+    else if (y == y->parent->left)
+        y->parent->left = z;
+    else
+        y->parent->right = z;
+
+    if (y != item)
+        item->index = y->index;
+
+    //fixing R&B properties
+    if (!y->is_red){ //only if successor of deleted item is black
+        while (z != NULL && z != db->first && !z->is_red){ //while we are not root or red
+            if (z == z->parent->left){ //if we are a left child
+                w = z->parent->right; //brother of z
+
+                if (!w) //brother is NULL (=>black)
+                    continue;
+
+                if (w && w->is_red){
+                    w->is_red = false;
+                    z->parent->is_red = true;
+                    bt_rotate_left_by(db, z->parent);
+                    w = z->parent->right;
+                }
+
+                if (w && (!w->left || !w->left->is_red) && (!w->right || !w->right->is_red)){
+                    w->is_red = true;
+                    z = z->parent;
+                    continue;
+                }
+
+                if (w && (!w->right || !w->right->is_red)){
+                    w->left->is_red = false;
+                    w->is_red = true;
+                    bt_rotate_right_by(db, w);
+                    w = z->parent->right;
+                }
+
+                w->is_red = z->parent->is_red; //SIGSEGV
+                w->right->is_red = false;
+                z->parent->is_red = false;
+                bt_rotate_left_by(db, z->parent);
+
+                z = db->first;
+            }
+            else { //if we are a right child - mirror cases
+                w = z->parent->left;
+
+                if (!w) //brother is NULL (=>black)
+                    continue;
+
+                if (w->is_red){
+                    w->is_red = false;
+                    z->parent->is_red = true;
+                    bt_rotate_right_by(db, z->parent);
+                    w = z->parent->left;
+                }
+
+                if ((!w->left || !w->left->is_red) && (!w->right || !w->right->is_red)){
+                    w->is_red = true;
+                    z = z->parent;
+                    continue;
+                }
+
+                if (!w->left || !w->left->is_red){
+                    w->right->is_red = false;
+                    w->is_red = true;
+                    bt_rotate_left_by(db, w);
+                    w = z->parent->left;
+                }
+
+                w->is_red = z->parent->is_red;
+                z->parent->is_red = false;
+                w->left->is_red = false;
+                bt_rotate_right_by(db, z->parent);
+
+                z = db->first;
+            }
+        }
+    }
+    if (z)
+        z->is_red = false;
+    free_node(y);
+}
+
 void bt_free_descend(struct contact_uninode* node){
     if (node->left) bt_free_descend(node->left);
     if (node->right) bt_free_descend(node->right);
@@ -484,6 +586,8 @@ void cunidb_free(contacts_unidb* db){
 struct contact_uninode *cunidb_get(contacts_unidb *db, uint32_t index) {
     if (db->type == CONTACT_UNIDB_DLL)
         return dll_get_by_index(db, index);
+    else if (db->type == CONTACT_UNIDB_BT)
+        return bt_get_by_index(db, index);
     else return NULL;
 
 }
@@ -523,6 +627,8 @@ void cunidb_remove(contacts_unidb *db, struct contact_uninode* item) {
     if (!item) return;
     if (db->type == CONTACT_UNIDB_DLL)
         dll_remove(db, item);
+    if (db->type == CONTACT_UNIDB_BT)
+        bt_delete(db, item);
 }
 
 void cunidb_sort(contacts_unidb *db, int sorttype) {
