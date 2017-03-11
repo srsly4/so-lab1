@@ -31,7 +31,8 @@ int parse_data(const char* filename){
 }
 
 void print_item(struct contact_uninode* item){
-    printf("#%d %-12s %-12s %-10s %-12s %-12s %-12s\n", item->index, item->name, item->surname,
+    if (item)
+        printf("#%d %-12s %-12s %-10s %-12s %-12s %-12s\n", item->index, item->name, item->surname,
            item->birthdate, item->email, item->phone, item->address);
 }
 
@@ -80,6 +81,9 @@ int main(){
     cunidb_remove(db, cunidb_get(db, 1));
     cunidb_remove(db, cunidb_get(db, 3));
     cunidb_remove(db, cunidb_get(db, 78));
+
+    printf("Sorting...\n");
+    cunidb_sort(db, CONTACT_UNIDB_SORT_SURNAME);
 
     printf("Iterating throught BT:\n");
     cunidb_iterator_reset(db);

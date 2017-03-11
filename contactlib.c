@@ -552,6 +552,47 @@ struct contact_uninode* bt_find(contacts_unidb* db, char* name, char* surname,
     return NULL;
 }
 
+void bt_sort_dll_descend(struct contact_uninode* item, struct contact_uninode** first, struct contact_uninode** last){
+    if (item->left)
+        bt_sort_dll_descend(item->left, first, last);
+    if (item->right)
+        bt_sort_dll_descend(item->right, first, last);
+    //join element to list
+    if (item->parent){
+        if (item->parent->left == item)
+            item->parent->left = NULL;
+        else item->parent->right = NULL;
+        item->parent = NULL;
+    }
+    dll_pintolist(first, last, item);
+}
+
+void bt_sort(contacts_unidb* db, int (*comparator)(struct contact_uninode*, struct contact_uninode*)){
+    if (db->first == NULL) return;
+    struct contact_uninode* sortable_first = NULL, *sortable_last = NULL, *curr, *next;
+
+    bt_sort_dll_descend(db->first, &sortable_first, &sortable_last);
+
+    db->first = NULL; // now we have empty BT;
+    db->current = NULL;
+    db->primary_key_serial = 1;
+
+    dll_quickersort(&sortable_first, &sortable_last, comparator);
+    curr = sortable_first;
+    while (curr){
+        next = curr->right;
+        curr->right = NULL;
+        curr->left = NULL;
+        curr->parent = NULL;
+        curr->index = db->primary_key_serial;
+        db->primary_key_serial++;
+        bt_insert(db, curr);
+        curr = next;
+    }
+
+
+}
+
 int comparator_surname(struct contact_uninode* first, struct contact_uninode* second){
     return strcmp(first->surname, second->surname);
 }
@@ -673,4 +714,6 @@ void cunidb_sort(contacts_unidb *db, int sorttype) {
 
     if (db->type == CONTACT_UNIDB_DLL)
         dll_sort(db, comparator);
+    if (db->type == CONTACT_UNIDB_SORT_SURNAME)
+        bt_sort(db, comparator);
 }
