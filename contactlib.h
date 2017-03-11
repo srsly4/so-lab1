@@ -8,8 +8,8 @@
 #define CONTACT_UNIDB_DLL 1 //double linked-list storage type
 #define CONTACT_UNIDB_BT 2 //binary tree storage type
 
-#define CONTACT_UNIDB_STRING_SIZE 64
-#define CONTACT_UNIDB_SHORTSTRING_SIZE 24
+#define CONTACT_UNIDB_STRING_SIZE 128
+#define CONTACT_UNIDB_SHORTSTRING_SIZE 64
 
 #define CONTACT_UNIDB_SORT_NAME 1
 #define CONTACT_UNIDB_SORT_SURNAME 2
@@ -46,7 +46,7 @@ typedef struct contacts_unidb {
 contacts_unidb* cunidb_initialize(int type);
 
 void cunidb_free(contacts_unidb* db);
-uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
+struct contact_uninode*  cunidb_add(contacts_unidb* db, char* name, char* surname,
     char* birthdate, char* email, char* phone, char* address); //returns an index of created element
 void cunidb_remove(contacts_unidb* db, struct contact_uninode* item);
 struct contact_uninode* cunidb_get(contacts_unidb* db, uint32_t index);

@@ -1,7 +1,6 @@
 #include "contactlib.h"
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 size_t trimsize(size_t original, size_t limit){
     return original+1 > limit ? limit : original+1;
@@ -614,7 +613,7 @@ int comparator_birtdate(struct contact_uninode* first, struct contact_uninode* s
 }
 
 
-uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
+struct contact_uninode*  cunidb_add(contacts_unidb* db, char* name, char* surname,
     char* birthdate, char* email, char* phone, char* address){
     
     struct contact_uninode* node = create_node(db, name, surname, birthdate, email, phone, address);
@@ -625,7 +624,7 @@ uint32_t cunidb_add(contacts_unidb* db, char* name, char* surname,
         bt_insert(db, node);
     }
 
-    return node->index;
+    return node;
 }
 
 
