@@ -535,6 +535,23 @@ struct contact_uninode* bt_iterator_next(contacts_unidb* db){
     return tmp;
 }
 
+struct contact_uninode* bt_find(contacts_unidb* db, char* name, char* surname,
+                                char* birthdate, char* email, char* phone, char* address){
+    bt_iterator_reset(db);
+    struct contact_uninode* curr;
+    while(!bt_iterator_empty(db)){
+        curr = bt_iterator_next(db);
+        if (!(name && !strstr(curr->name, name))
+            && !(surname && !strstr(curr->surname, surname))
+            && !(birthdate && !strstr(curr->birthdate, birthdate))
+            && !(email && !strstr(curr->email, email))
+            && !(phone && !strstr(curr->phone, phone))
+            && !(address && !strstr(curr->address, address)))
+            return curr;
+    }
+    return NULL;
+}
+
 int comparator_surname(struct contact_uninode* first, struct contact_uninode* second){
     return strcmp(first->surname, second->surname);
 }
@@ -620,6 +637,8 @@ struct contact_uninode *cunidb_find(contacts_unidb* db, char* name, char* surnam
                                     char* birthdate, char* email, char* phone, char* address) {
     if (db->type == CONTACT_UNIDB_DLL)
         return dll_find(db, name, surname, birthdate, email, phone, address);
+    if (db->type == CONTACT_UNIDB_BT)
+        return bt_find(db, name, surname, birthdate, email, phone, address);
     return NULL;
 }
 

@@ -91,6 +91,11 @@ int main(){
     struct contact_uninode* test = cunidb_get(db, 32);
     print_item(test);
 
+    printf("Trying to find something...\n");
+    test = cunidb_find(db, "A", NULL, NULL, "non.luctus", NULL, NULL);
+    if (test)
+        print_item(test);
+
     printf("Freeing memory...\n");
     cunidb_free(db);
 
