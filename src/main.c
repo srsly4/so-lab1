@@ -127,6 +127,7 @@ void test_cunidb(contacts_unidb* db){
 
     ts_start = malloc(sizeof(struct timespec));
     ts_end = malloc(sizeof(struct timespec));
+
     ru_start = malloc(sizeof(struct rusage));
     ru_end = malloc(sizeof(struct rusage));
 
@@ -159,9 +160,15 @@ void test_cunidb(contacts_unidb* db){
     start_measuring();
     printf("=>Adding item (to the end)...");
 #ifndef DYNLIB
+#ifndef BUGGED
     struct contact_uninode* added =
             cunidb_add(db, "Test", "Added", "01-01-2001",
                        "test@test.pl", "123456789", "TestCity, Test 15");
+#else
+    struct contact_uninode* added = cunidb_get(db, 0);
+    cunidb_add(db, "Test", "Added", "01-01-2001",
+               "test@test.pl", "123456789", "TestCity, Test 15");
+#endif
 #else
     struct contact_uninode* added =
             (*d_cunidb_add)(db, "Test", "Added", "01-01-2001",

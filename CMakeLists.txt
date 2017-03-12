@@ -76,3 +76,9 @@ add_custom_target(
         COMMAND sh ./optimization-test-runner.sh
         DEPENDS optimizations
 )
+
+#purpose-bugged build
+add_library(contact-bugged STATIC EXCLUDE_FROM_ALL lib/contact.c)
+add_executable(contactbook-bugged EXCLUDE_FROM_ALL src/main.c)
+target_compile_definitions(contactbook-bugged PRIVATE BUGGED=true)
+target_link_libraries(contactbook-bugged contact-bugged)
