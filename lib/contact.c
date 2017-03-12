@@ -16,6 +16,7 @@ contacts_unidb* cunidb_initialize(int type){
     db->last = NULL;
     db->primary_key_serial = 1; //let begin with 1 index
     db->current = NULL;
+    return db;
 }
 
 struct contact_uninode* create_node(contacts_unidb* db, char* name, char* surname,

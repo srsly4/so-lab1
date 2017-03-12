@@ -118,13 +118,17 @@ void print_measured(){
 
 
 void test_cunidb(contacts_unidb* db){
+    printf("---------\nTESTING CUNIDB library\n-------\n");
+    if (!db){
+        printf("Fatal error: db has not been initialized!\n");
+        exit(1);
+    }
+    printf("Type: %s\n", db->type == CONTACT_UNIDB_BT ? "R&B Binary tree" : "Double-linked list");
+
     ts_start = malloc(sizeof(struct timespec));
     ts_end = malloc(sizeof(struct timespec));
     ru_start = malloc(sizeof(struct rusage));
     ru_end = malloc(sizeof(struct rusage));
-
-    printf("---------\nTESTING CUNIDB library\n-------\n");
-    printf("Type: %s\n", db->type == CONTACT_UNIDB_BT ? "R&B Binary tree" : "Double-linked list");
 
     start_measuring();
     printf("=>Importing data...");
