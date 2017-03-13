@@ -109,11 +109,11 @@ void print_measured(){
     getrusage(RUSAGE_SELF, ru_end);
     double real_delta_ms = (ts_end->tv_sec - ts_start->tv_sec)*1000.0
                             + (ts_end->tv_nsec - ts_start->tv_nsec)/1000000.0;
-    double cpu_delta_ms = (ru_end->ru_stime.tv_sec - ru_start->ru_stime.tv_sec)*1000
-                            + (ru_end->ru_stime.tv_usec - ru_start->ru_stime.tv_usec)/1000000.0;
+    double sys_delta_ms = (ru_end->ru_stime.tv_sec - ru_start->ru_stime.tv_sec)*1000
+                            + (ru_end->ru_stime.tv_usec - ru_start->ru_stime.tv_usec)/1000.0;
     double usr_delta_ms = (ru_end->ru_utime.tv_sec - ru_start->ru_utime.tv_sec)*1000
-                          + (ru_end->ru_utime.tv_usec - ru_start->ru_utime.tv_usec)/1000000.0;
-    printf(" \x1B[33m[real: %.4fms cpu: %.4fms usr: %.4fms]\x1B[0m\n", real_delta_ms, cpu_delta_ms, usr_delta_ms);
+                          + (ru_end->ru_utime.tv_usec - ru_start->ru_utime.tv_usec)/1000.0;
+    printf(" \x1B[33m[real: %.4fms sys: %.4fms usr: %.4fms]\x1B[0m\n", real_delta_ms, sys_delta_ms, usr_delta_ms);
 }
 
 
